@@ -1,0 +1,50 @@
+set ns [new Simulator]
+set tf [open prog2.tr w]
+$ns trace-all $tf
+set nf [open prog2.nam w]
+$ns namtrace-all $nf
+
+set n0 [$ns node]
+set n1 [$ns node]
+set n2 [$ns node]
+set n3 [$ns node]
+
+$ns duplex-link $n0 $n2 2Mb 2ms DropTail
+$ns duplex-link $n1 $n2 2Mb 2ms DropTail
+$ns duplex-link $n2 $n3 2Mb 2ms DropTail
+
+set tcp1 [new Agent/TCP]
+$ns attach-agent $n0 $tcp1
+set sink [new Agent/TCPSink]
+$ns attach-agent $n3 $sink
+$ns connect $tcp1 $sink
+
+set ftp [new Application/FTP]
+$ftp attach-agent $tcp1
+
+$ns at 0.1 "$ftp start"
+$ns at 10.0 "finish"
+
+set tcp2 [new Agent/TCP]
+$ns attach-agent $n3 $tcp2
+set sink [new Agent/TCPSink]
+$ns attach-agent $n1 $sink
+$ns connect $tcp2 $sink
+
+set telnet [new Application/Telnet]
+$telnet attach-agent $tcp2
+
+
+$ns at 0.1 "$telnet start"
+$ns at  10.0 "finish"
+
+proc finish {} {
+global ns tf nf
+$ns flush-trace
+close $tf
+close $nf
+puts "running nam"
+exec nam prog2.nam &
+exit 0
+}
+$ns run
